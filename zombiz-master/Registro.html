@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Enlaces a fuentes y estilos CSS -->
+    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i,700,700i,900,900i" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700,900" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Playwrite+NZ:wght@100..400&display=swap" rel="stylesheet">
+
+    <!-- Título de la página -->
+    <title>Crea tu cuenta</title>
+
+    <!-- Ícono del título -->
+    <link rel="shortcut icon" type="image/icon" href="assets/images/logo/LOGO APP.png">
+
+    <!-- Estilos CSS externos -->
+    <link rel="stylesheet" href="assets/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
+    <link rel="stylesheet" href="assets/css/animate.css">
+    <link rel="stylesheet" href="assets/css/hover-min.css">
+    <link rel="stylesheet" href="assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="assets/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="assets/css/owl.theme.default.min.css">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/bootsnav.css">
+    <link rel="stylesheet" href="assets/css/Registro.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+    <div class="CentrarRegistro">
+        <form class="form" action="/submit-form" method="POST" onsubmit="return validateForm()">
+            <p class="title">Creacion de una cuenta</p>
+            <p class="message">Crea una nueva cuenta para poder navegar y hacer compras</p>
+            <div class="flex">
+                <label>
+                    <input id="nombre" class="input" type="text" name="nombre" placeholder="" required>
+                    <span>Nombre</span>
+                </label>
+                <label>
+                    <input id="apellido" class="input" type="text" name="apellido" placeholder="" required>
+                    <span>Apellido</span>
+                </label>
+            </div>
+            <label>
+                <input id="email" class="input" type="text" name="email" placeholder="" required>
+                <span>Email</span>
+            </label>
+            <label>
+                <input id="direccion" class="input" type="text" name="direccion" placeholder="" required>
+                <span>Direccion</span>
+            </label>
+            <label>
+                <input id="telefono" class="input" type="text" name="telefono" placeholder="" required>
+                <span>Telefono</span>
+            </label>
+            <label>
+                <input id="password" class="input" type="password" name="password" placeholder="" required>
+                <span>Contraseña</span>
+            </label>
+            <label>
+                <input id="confirmPassword" class="input" type="password" placeholder="" required>
+                <span>Confirmar Contraseña</span>
+            </label>
+            <button type="submit" class="submit">Crear</button>
+            <p class="signin">¿Ya tienes una cuenta? <a href="Inicio_Sesion.html">Inicia sesión</a></p>
+        </form>
+    </div>
+    <script src="assets/js/custom.js"></script>
+</body>
+</html>
