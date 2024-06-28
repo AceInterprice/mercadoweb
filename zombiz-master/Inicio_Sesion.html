@@ -53,15 +53,15 @@
         $(document).ready(function() {
             $("#loginForm").on("submit", function(event) {
                 event.preventDefault(); // Evitar el envío del formulario de forma tradicional
-                
+    
                 const email = $("#email").val().trim();
                 const password = $("#password").val().trim();
-                
+    
                 if (!email || !password) {
                     alert("Por favor, llene todos los campos.");
                     return;
                 }
-                
+    
                 $.ajax({
                     url: "/login",
                     method: "POST",
@@ -69,7 +69,14 @@
                     data: JSON.stringify({ email, password }),
                     success: function(response) {
                         if (response.success) {
-                            window.location.href = "index.html"; // Redirigir al index.html en caso de éxito
+                            // Guardar la ID del usuario en localStorage
+                            localStorage.setItem('idUsuario', response.idUsuario);
+                            
+                            // Guardar los productos del carrito en localStorage
+                            localStorage.setItem('carrito', JSON.stringify(response.carrito));
+                            
+                            // Redirigir al index.html en caso de éxito
+                            window.location.href = "index.html";
                         } else {
                             alert(response.message); // Mostrar mensaje de error si algo sale mal
                         }
@@ -82,5 +89,6 @@
             });
         });
     </script>
+    
 </body>
 </html>

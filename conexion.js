@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const mysql = require('mysql');
 const path = require('path');
 const app = express();
-const fs = require('fs');
 
 const conexion = mysql.createConnection({
     host: "localhost",
@@ -33,71 +32,81 @@ app.get('/', (req, res) => {
 app.post('/submit-form', (req, res) => {
     const { nombre, apellido, email, direccion, telefono, password } = req.body;
 
-    // Query SQL para insertar datos en la tabla Usuarios
     const sql = `INSERT INTO Usuarios (nombre, apellido, email, direccion, telefono, password) 
-                 VALUES ('${nombre}', '${apellido}', '${email}', '${direccion}', '${telefono}', '${password}')`;
+                 VALUES (?, ?, ?, ?, ?, ?)`;
 
-    // Ejecutar la consulta SQL
-    conexion.query(sql, (err, result) => {
+    conexion.query(sql, [nombre, apellido, email, direccion, telefono, password], (err, result) => {
         if (err) {
             console.error("Error al guardar los datos en la base de datos:", err);
             return res.status(500).json({ success: false, message: 'Error al guardar los datos en la base de datos.' });
         }
         console.log("Datos insertados correctamente en la base de datos");
-        // Enviar una respuesta JSON indicando éxito
         res.status(200).json({ success: true, message: 'Datos guardados correctamente.' });
     });
 });
 
-// Ruta para manejar el inicio de sesión
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
 
-    // Query SQL para verificar el usuario
-    const sqlSelect = 'SELECT * FROM Usuarios WHERE email = ? AND password = ?';
-    conexion.query(sqlSelect, [email, password], (err, results) => {
+    const sqlAuth = 'SELECT id FROM usuarios WHERE email = ? AND password = ?';
+    conexion.query(sqlAuth, [email, password], (err, results) => {
         if (err) {
-            console.error('Error al consultar la base de datos:', err);
-            return res.status(500).json({ success: false, message: 'Error al consultar la base de datos.' });
+            console.error("Error al autenticar el usuario:", err);
+            return res.status(500).json({ success: false, message: 'Error al autenticar el usuario.' });
         }
 
-        if (results.length > 0) {
-            // Usuario encontrado, obtener el nombre de usuario
-            const nombreUsuario = results[0].nombre;
-
-            // Query SQL para insertar el nombre de usuario en la tabla logeado
-            const sqlInsert = 'INSERT INTO logeado (nombre_usuario) VALUES (?)';
-            conexion.query(sqlInsert, [nombreUsuario], (err, result) => {
-                if (err) {
-                    console.error('Error al insertar en la tabla logeado:', err);
-                    return res.status(500).json({ success: false, message: 'Error al insertar en la tabla logeado.' });
-                }
-
-                console.log(`Usuario ${nombreUsuario} ha iniciado sesión`);
-
-                // Enviar una respuesta JSON indicando éxito
-                res.json({ success: true });
-            });
-        } else {
-            // Usuario no encontrado
-            res.json({ success: false, message: 'Correo o contraseña incorrectos.' });
+        if (results.length === 0) {
+            return res.status(401).json({ success: false, message: 'Credenciales incorrectas.' });
         }
+
+        const idUsuario = results[0].id;
+
+        const sqlCarrito = 'SELECT nombre_producto, precio FROM carrito WHERE comprador = ?';
+        conexion.query(sqlCarrito, [idUsuario], (err, carritoResults) => {
+            if (err) {
+                console.error("Error al obtener el carrito del usuario:", err);
+                return res.status(500).json({ success: false, message: 'Error al obtener el carrito.' });
+            }
+
+            const productosCarrito = carritoResults.map(row => ({
+                nombre: row.nombre_producto,
+                precio: row.precio
+            }));
+
+            if (productosCarrito.length > 0) {
+                const sqlDeleteCarrito = 'DELETE FROM carrito WHERE comprador = ?';
+                conexion.query(sqlDeleteCarrito, [idUsuario], (err, result) => {
+                    if (err) {
+                        console.error("Error al eliminar los datos del carrito:", err);
+                        return res.status(500).json({ success: false, message: 'Error al limpiar el carrito.' });
+                    }
+
+                    console.log("Productos del carrito eliminados de la tabla carrito");
+
+                    res.status(200).json({
+                        success: true,
+                        idUsuario: idUsuario,
+                        carrito: productosCarrito
+                    });
+                });
+            } else {
+                res.status(200).json({
+                    success: true,
+                    idUsuario: idUsuario,
+                    carrito: productosCarrito
+                });
+            }
+        });
     });
 });
 
-
-// Ruta para confirmar la compra y guardar los productos en la base de datos
 app.post('/confirmar-compra', (req, res) => {
-    const productos = JSON.parse(req.body.productos);
-    const idComprador = req.body.id_comprador; // Suponiendo que recibes el id_comprador desde el cliente
+    const productos = req.body.productos;
+    const idComprador = req.body.id_comprador;
 
-    // Query SQL para insertar productos comprados en la tabla Compras
     const sql = 'INSERT INTO Compras (nombre_producto, precio, comprador) VALUES ?';
-    
-    // Mapear productos para crear un array de arrays para la inserción SQL
     const values = productos.map(producto => [producto.nombre, producto.precio, idComprador]);
 
-    // Ejecutar la consulta SQL
     conexion.query(sql, [values], (err, result) => {
         if (err) {
             console.error("Error al guardar los datos en la tabla Compras:", err);
@@ -106,47 +115,38 @@ app.post('/confirmar-compra', (req, res) => {
         
         console.log("Productos comprados guardados en la tabla Compras");
 
-        // Limpiar el carrito en localStorage después de confirmar la compra
-        localStorage.removeItem('carrito');
-
-        // Enviar una respuesta JSON indicando éxito
         res.status(200).json({ success: true, message: 'Compra confirmada exitosamente.' });
     });
 });
 
-// Ruta para guardar una compra en la base de datos
-app.post('/guardar-compra', (req, res) => {
-    const { nombre_producto, precio } = req.body;
+// conexion.js
 
-    // Query SQL para obtener el último id_comprador registrado en la tabla logeado
-    const sqlObtenerIdComprador = 'SELECT nombre_usuario FROM logeado ORDER BY id DESC LIMIT 1';
-    
-    // Ejecutar la consulta SQL para obtener el id_comprador
-    conexion.query(sqlObtenerIdComprador, (err, rows) => {
+// conexion.js
+
+app.post('/guardar_carrito', (req, res) => {
+    const productos = req.body.productos;
+    const idComprador = req.body.id_comprador;
+
+    console.log("ID del comprador recibido:", idComprador); // Verifica qué valor muestra aquí
+
+    const sql = 'INSERT INTO carrito (nombre_producto, precio, comprador) VALUES ?';
+    const values = productos.map(producto => [producto.nombre, producto.precio, idComprador]);
+
+    conexion.query(sql, [values], (err, result) => {
         if (err) {
-            console.error("Error al obtener el id_comprador:", err);
-            return res.status(500).json({ success: false, message: 'Error al guardar compra en la base de datos.' });
+            console.error("Error al guardar los datos en la tabla carrito:", err);
+            return res.status(500).json({ success: false, message: 'Error al guardar el carrito.' });
         }
+        
+        console.log("Productos del carrito guardados en la tabla carrito");
 
-        if (rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'No se encontró ningún usuario logueado.' });
-        }
-
-        const id_comprador = rows[0].id_comprador;
-
-        // Query SQL para insertar datos en la tabla Compras
-        const sqlInsertarCompra = `INSERT INTO Compras (nombre_producto, precio, comprador) VALUES (?, ?, ?)`;
-        conexion.query(sqlInsertarCompra, [nombre_producto, precio, id_comprador], (err, result) => {
-            if (err) {
-                console.error("Error al guardar compra en la base de datos:", err);
-                return res.status(500).json({ success: false, message: 'Error al guardar compra en la base de datos.' });
-            }
-            console.log("Compra registrada correctamente en la base de datos");
-            // Enviar una respuesta JSON indicando éxito
-            res.status(200).json({ success: true });
-        });
+        res.status(200).json({ success: true, message: 'Carrito guardado exitosamente.' });
     });
 });
+
+
+
+  
 
 
 

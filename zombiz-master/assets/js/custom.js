@@ -160,6 +160,19 @@ $(document).ready(function(){
         });
 		
 });	
+///////////////////////////////////////////////////////
+// Guardar la ID del usuario en localStorage al iniciar sesión
+document.addEventListener('DOMContentLoaded', function() {
+    let idUsuario = localStorage.getItem('idUsuario');
+
+    if (idUsuario) {
+        // Aquí puedes realizar acciones adicionales con la ID del usuario si es necesario
+    }
+});
+
+// custom.js
+
+
 //////////////////////////////////////////////////////
 //Función para agregar un producto al carrito
 function agregarProducto(nombre, precio) {
@@ -210,30 +223,35 @@ function mostrarProductosEnCarrito() {
 // Función para confirmar compra
 function confirmarCompra() {
     let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+    let idUsuario = parseInt(localStorage.getItem('idUsuario'), 10); // Convertir a entero con base 10
+
     if (carrito.length > 0) {
         alert("Compra confirmada");
-        // Enviar datos del carrito a la tabla Compras
-        guardarProductosEnTabla(carrito);
-        localStorage.removeItem('carrito');
-        actualizarContador();
-        mostrarProductosEnCarrito();
+        
+        // Verificar si el ID es un número válido antes de enviarlo
+        if (!isNaN(idUsuario)) {
+            guardarProductosEnTabla(carrito, idUsuario); // Pasar el ID del usuario como un entero a la función
+            localStorage.removeItem('carrito');
+            actualizarContador();
+            mostrarProductosEnCarrito();
+        } else {
+            console.error('ID de usuario no válido');
+        }
     } else {
         alert("El carrito está vacío");
     }
     console.log(carrito);
 }
 
-function guardarProductosEnTabla(productos) {
-    productos.forEach(producto => {
-        const { nombre, precio } = producto;
-
+function guardarProductosEnTabla(productos, idUsuario) {
+    if (!isNaN(idUsuario)) {
         const formData = {
-            nombre_producto: nombre,
-            precio: precio
+            productos: productos,
+            id_comprador: idUsuario
         };
 
         // Enviar los datos al servidor usando fetch
-        fetch('/guardar-compra', {
+        fetch('/confirmar-compra', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -243,17 +261,74 @@ function guardarProductosEnTabla(productos) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log("Producto guardado en la tabla Compras");
+                console.log("Productos guardados en la tabla Compras");
             } else {
-                console.error("Error al guardar producto en la tabla Compras:", data.message);
+                console.error("Error al guardar productos en la tabla Compras:", data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
         });
-    });
+    } else {
+        console.error('ID de usuario no válido en guardarProductosEnTabla');
+    }
 }
 
+function confirmarSalir() {
+    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+    let idUsuario = parseInt(localStorage.getItem('idUsuario'), 10); // Convertir a entero con base 10
+
+    if (carrito.length > 0) {
+        alert("Carrito Guardado");
+        console.log(idUsuario);
+        // Verificar si el ID es un número válido antes de enviarlo
+        if (!isNaN(idUsuario)) {
+            guardarCarritoEnTabla(carrito, idUsuario); // Pasar el ID del usuario como un entero a la función
+            console.log(idUsuario);
+            localStorage.removeItem('carrito');
+            actualizarContador();
+        } else {
+            console.error('ID de usuario no válido');
+        }
+    } else {
+        window.location.href = '../Inicio_Sesion.html';
+    }
+    console.log(carrito);
+}
+
+function guardarCarritoEnTabla(productos, idUsuario) {
+    if (!isNaN(idUsuario)) {
+        const formData = {
+            productos: productos,
+            id_comprador: idUsuario
+        };
+
+        // Enviar los datos al servidor usando fetch
+        fetch('/guardar_carrito', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("Productos guardados en la tabla Carrito");
+                window.location.href = '../Inicio_Sesion.html';
+                localStorage.clear();
+
+            } else {
+                console.error("Error al guardar productos en la tabla Carrito:", data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    } else {
+        console.error('ID de usuario no válido en guardarProductosEnTabla');
+    }
+}
 // Ejecutar solo en la página de productos
 if (document.querySelector('.team')) {
     document.querySelectorAll('.cart-button').forEach(button => {
@@ -266,12 +341,19 @@ if (document.querySelector('.team')) {
     });
 }
 
+
+
 // Ejecutar solo en la página del carrito
 if (document.getElementById('cartProductList')) {
     mostrarProductosEnCarrito();
     document.getElementById('checkoutButton').addEventListener('click', confirmarCompra);
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('btnSalir')) {
+        document.getElementById('btnSalir').addEventListener('click', confirmarSalir);
+    }
+});
 // Actualizar el contador en ambas páginas
 document.addEventListener('DOMContentLoaded', actualizarContador);
 ///////////////////////////////////////////////////////////////////////
@@ -354,26 +436,19 @@ function validateForm() {
 /////////////////////////////////////////////////////////////
 // Mostrar datos de perfil al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    const nombre = localStorage.getItem('nombre');
-    const apellido = localStorage.getItem('apellido');
-    const email = localStorage.getItem('email');
-    const telefono = localStorage.getItem('telefono');
-    const direccion = localStorage.getItem('direccion');
+    const idUsuario = localStorage.getItem('idUsuario');
+    const carrito = localStorage.getItem('carrito');
 
-    if (nombre) {
-        document.getElementById('Pnombre').value = nombre;
+    // Realizar acciones adicionales con la ID del usuario si es necesario
+    if (idUsuario) {
+        // Aquí puedes realizar acciones adicionales con la ID del usuario si es necesario
+        console.log('ID del usuario:', idUsuario);
     }
-    if (apellido) {
-        document.getElementById('Papellido').value = apellido;
-    }
-    if (email) {
-        document.getElementById('Pemail').value = email;
-    }
-    if (telefono) {
-        document.getElementById('Ptelefono').value = telefono;
-    }
-    if (direccion) {
-        document.getElementById('Pdireccion').value = direccion;
+
+    // Opcional: Mostrar el carrito en la página si es necesario
+    if (carrito) {
+        // Aquí puedes mostrar el carrito en la página si es necesario
+        console.log('Carrito:', carrito);
     }
 });
 
