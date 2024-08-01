@@ -1,23 +1,5 @@
 $(document).ready(function(){
 	"use strict";
-    
-        /*==================================
-* Author        : "ThemeSINE"
-* Template Name : Zombiz HTML Template
-* Version       : 1.0
-==================================== */
-
-
-
-
-        /*=========== TABLE OF CONTENTS ===========
-1. Scroll To Top 
-2. hcsticky 
-3. Counter
-4. owl carousel
-5. vedio player
-6. animation support
-======================================*/
 
     // 1. Scroll To Top 
 		$(window).on('scroll',function () {
@@ -39,125 +21,6 @@ $(document).ready(function(){
 
 		$('#menu').hcSticky();
 
-
-	// 3. counter
-		$(window).on('load', function(){	
-			$('.counter').counterUp({
-				delay: 10,
-				time: 3000
-			});	
-		});
-	
-	
-	// 4. owl carousel
-
-		// i. .team-carousel 
-	
-		
-		var owl=$('.team-carousel');
-		owl.owlCarousel({
-			items:4,
-			margin:0,
-			
-			loop:true,
-			autoplay:true,
-			smartSpeed:500,
-			
-			//nav:false,
-			//navText:["<i class='fa fa-angle-left'></i>","<i class='fa fa-angle-right'></i>"],
-			
-			dots:false,
-			autoplayHoverPause:true,
-		
-			responsiveClass:true,
-				responsive:{
-					0:{
-						items:1
-					},
-					640:{
-						items:2
-					},
-					768:{
-						items:3
-					},
-					992:{
-						items:4
-					}
-				}
-			
-			
-		});
-
-		// ii. .client (carousel)
-		
-		$('#client').owlCarousel({
-			items:5,
-			loop:true,
-			smartSpeed: 1000,
-			autoplay:true,
-			dots:false,
-			autoplayHoverPause:true,
-			responsive:{
-					0:{
-						items:2
-					},
-					415:{
-						items:2
-					},
-					600:{
-						items:3
-					},
-					1000:{
-						items:5
-					}
-				}
-			});
-			
-			
-			$('.play').on('click',function(){
-				owl.trigger('play.owl.autoplay',[1000])
-			})
-			$('.stop').on('click',function(){
-				owl.trigger('stop.owl.autoplay')
-			})
-
-		// iii.  testimonial
-		
-		$("#testemonial-carousel").owlCarousel({
-			items: 1,
-			autoplay: true,
-			loop: true,
-			dots:true,
-			mouseDrag:true,
-			nav:false,
-			smartSpeed:1000,
-			transitionStyle:"fade",
-			animateIn: 'fadeIn',
-			animateOut: 'fadeOutLeft'
-			// navText:["<i class='fa fa-angle-left'></i>","<i class='fa fa-angle-right'></i>"]
-		});
-
-	// 5. vedio player
-		$('.vedio-play-icon').magnificPopup({
-			
-			type:'video'
-		
-		});	
-
-	// 6. animation support
-
-        $(window).load(function(){
-
-            $(".single-slide-item-content h2, .single-slide-item-content p").removeClass("animated fadeInUp").css({'opacity':'0'});
-            $(".single-slide-item-content button").removeClass("animated fadeInLeft").css({'opacity':'0'});
-        });
-
-        $(window).load(function(){
-
-            $(".single-slide-item-content h2, .single-slide-item-content p").addClass("animated fadeInUp").css({'opacity':'0'});
-            $(".single-slide-item-content button").addClass("animated fadeInLeft").css({'opacity':'0'});
-
-        });
 		
 });	
 ///////////////////////////////////////////////////////
@@ -170,108 +33,104 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// custom.js
 
-
-//////////////////////////////////////////////////////
-//Función para agregar un producto al carrito
-function agregarProducto(nombre, precio) {
-    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-    let producto = { nombre: nombre, precio: precio };
-    carrito.push(producto);
-    localStorage.setItem('carrito', JSON.stringify(carrito));
-    mostrarMensaje("¡Producto agregado al carrito!");
-    actualizarContador();
-}
-
-// Función para mostrar mensaje temporalmente
-function mostrarMensaje(mensaje) {
-    var mensajeContainer = document.getElementById('mensajeContainer');
-    var cartMessage = document.getElementById('cartMessage');
-    if (mensajeContainer && cartMessage) {
-        cartMessage.textContent = mensaje;
-        mensajeContainer.style.display = 'block';
-        setTimeout(() => {
-            mensajeContainer.style.display = 'none';
-        }, 2000);
-    }
-}
-
-// Función para actualizar el contador del carrito
-function actualizarContador() {
-    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-    let contador = document.querySelector('.contador');
-    if (contador) {
-        contador.textContent = carrito.length;
-    }
-}
-
-// Función para mostrar productos en la página del carrito
-function mostrarProductosEnCarrito() {
-    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-    let productList = document.getElementById('cartProductList');
-    if (productList) {
-        productList.innerHTML = '';
-        carrito.forEach((producto, index) => {
-            let li = document.createElement('li');
-            li.textContent = `${producto.nombre} - $${producto.precio}`;
-            productList.appendChild(li);
-        });
-    }
-}
-///////////////////////////////////////////////////////////////
-// Función para confirmar compra
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 function confirmarCompra() {
     let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
     let idUsuario = parseInt(localStorage.getItem('idUsuario'), 10); // Convertir a entero con base 10
 
     if (carrito.length > 0) {
-        alert("Compra confirmada");
-        
-        // Verificar si el ID es un número válido antes de enviarlo
         if (!isNaN(idUsuario)) {
-            guardarProductosEnTabla(carrito, idUsuario); // Pasar el ID del usuario como un entero a la función
-            localStorage.removeItem('carrito');
-            actualizarContador();
-            mostrarProductosEnCarrito();
+            // Verificar si el usuario tiene una tarjeta registrada
+            fetch(`/api/tarjeta/${idUsuario}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // El usuario tiene una tarjeta, proceder con la compra
+                        guardarProductosEnTabla(carrito, idUsuario) // Guardar productos en la tabla
+                            .then(() => enviarCorreoCompra(idUsuario, carrito)) // Enviar correo después de guardar
+                            .then(() => {
+                                localStorage.removeItem('carrito');
+                                actualizarContador();
+                                mostrarProductosEnCarrito();
+                                alert("Compra confirmada");
+                            });
+                    } else {
+                        // El usuario no tiene una tarjeta registrada
+                        alert("No tienes una tarjeta registrada. Por favor, añade una tarjeta para completar la compra.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar la tarjeta:', error);
+                    alert("Hubo un error al verificar la tarjeta. Inténtalo de nuevo.");
+                });
         } else {
             console.error('ID de usuario no válido');
         }
     } else {
         alert("El carrito está vacío");
     }
-    console.log(carrito);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////7
+
+// Función para enviar correo de compra
+function enviarCorreoCompra(idUsuario, carrito) {
+    return fetch(`/enviar-correo`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ idUsuario, carrito })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log("Correo enviado exitosamente");
+        } else {
+            console.error("Error al enviar el correo:", data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error al enviar el correo:', error);
+    });
 }
 
 function guardarProductosEnTabla(productos, idUsuario) {
-    if (!isNaN(idUsuario)) {
-        const formData = {
-            productos: productos,
-            id_comprador: idUsuario
-        };
+    return new Promise((resolve, reject) => { // Asegúrate de devolver una promesa
+        if (!isNaN(idUsuario)) {
+            const formData = {
+                productos: productos,
+                id_comprador: idUsuario
+            };
 
-        // Enviar los datos al servidor usando fetch
-        fetch('/confirmar-compra', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log("Productos guardados en la tabla Compras");
-            } else {
-                console.error("Error al guardar productos en la tabla Compras:", data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    } else {
-        console.error('ID de usuario no válido en guardarProductosEnTabla');
-    }
+            // Enviar los datos al servidor usando fetch
+            fetch('/confirmar-compra', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Productos guardados en la tabla Compras");
+                    resolve(); // Resuelve la promesa
+                } else {
+                    console.error("Error al guardar productos en la tabla Compras:", data.message);
+                    reject(data.message); // Rechaza la promesa
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                reject(error); // Rechaza la promesa
+            });
+        } else {
+            console.error('ID de usuario no válido en guardarProductosEnTabla');
+            reject('ID de usuario no válido'); // Rechaza la promesa
+        }
+    });
 }
 
 function confirmarSalir() {
@@ -340,9 +199,6 @@ if (document.querySelector('.team')) {
         });
     });
 }
-
-
-
 // Ejecutar solo en la página del carrito
 if (document.getElementById('cartProductList')) {
     mostrarProductosEnCarrito();
@@ -439,10 +295,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const idUsuario = localStorage.getItem('idUsuario');
     const carrito = localStorage.getItem('carrito');
 
+    
+
     // Realizar acciones adicionales con la ID del usuario si es necesario
     if (idUsuario) {
         // Aquí puedes realizar acciones adicionales con la ID del usuario si es necesario
         console.log('ID del usuario:', idUsuario);
+       
+       
     }
 
     // Opcional: Mostrar el carrito en la página si es necesario
@@ -471,5 +331,86 @@ document.querySelector('.profile-form').addEventListener('submit', function(even
     // Opcional: mostrar mensaje de éxito u otra acción
 
     // Evitar el envío del formulario
-    return false;
+   
 });
+
+/*--------------------------------------mio----------------------------*/
+
+
+// Ruta para obtener los datos del usuario
+document.addEventListener("DOMContentLoaded", function() {
+    const userId = localStorage.getItem('idUsuario');
+    
+    if (userId) {
+        fetch(`/api/usuario/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('nombre').value = data.usuario.nombre;
+                    document.getElementById('apellido').value = data.usuario.apellido;
+                    document.getElementById('email').value = data.usuario.email;
+                    document.getElementById('telefono').value = data.usuario.telefono;
+                    document.getElementById('direccion').value = data.usuario.direccion;
+                } else {
+                    console.error(data.message);
+                }
+            })
+            .catch(error => console.error('Error al obtener los datos del usuario:', error));
+    } else {
+        console.error('No se encontró el ID de usuario en localStorage');
+    }
+});
+
+///-----------Guardar datos del perfil-----------///
+
+// Función para actualizar los datos del usuario
+function actualizarDatosUsuario() {
+    const idUsuario = localStorage.getItem('idUsuario');
+    const nombre = document.getElementById('nombre').value;
+    const apellido = document.getElementById('apellido').value;
+    const email = document.getElementById('email').value;
+    const telefono = document.getElementById('telefono').value;
+    const direccion = document.getElementById('direccion').value;
+
+    const formData = {
+        id: idUsuario,
+        nombre: nombre,
+        apellido: apellido,
+        email: email,
+        telefono: telefono,
+        direccion: direccion
+    };
+
+    fetch('/actualizar-usuario', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Datos actualizados correctamente.');
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+//Ayuda a que carguen los datos del usuario en perfil.html
+function actualizarContador() {
+    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+    let contador = document.querySelector('.contador');
+    if (contador) {
+        contador.textContent = carrito.length;
+    }
+}
+
+// Evento para el botón "Guardar"
+document.getElementById('guardarDatos').addEventListener('click', actualizarDatosUsuario);
+
+//-------------------------------funcion del API------------------------------------------------------
